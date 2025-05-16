@@ -1,4 +1,5 @@
 FROM php:8.3-cli-alpine AS base
+COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
 
 RUN apk add --no-cache \
     bash curl git build-base cmake go jq \
