@@ -1,4 +1,4 @@
-FROM golang:1.24-alpine as builder
+FROM golang:1.24-alpine AS builder
 
 ARG TARGETARCH
 
@@ -82,7 +82,7 @@ COPY --from=composer/composer:2-bin /composer /usr/bin/composer
 WORKDIR /go/src/app
 
 RUN git clone --recursive https://github.com/dunglas/frankenphp . && \
-    if [ -n "${FRANKENPHP_VERSION}" ]; then git checkout "${FRANKENPHP_VERSION}"; fi \
+    if [ -n "${FRANKENPHP_VERSION}" ]; then git checkout "${FRANKENPHP_VERSION}"; fi
 
 RUN go mod download
 
