@@ -11,9 +11,11 @@ RUN --mount=type=cache,target=/var/cache/apk \
 
 WORKDIR /frankenphp
 
-# Optional: pin to tag or commit
 RUN git clone --recursive https://github.com/dunglas/frankenphp . && \
     chmod +x ./build-static.sh
+
+RUN echo "; patched by Dockerfile to avoid dynamic loading" >> /usr/local/etc/php/php.ini-development && \
+    sed -i '/^extension=/d' /usr/local/etc/php/php.ini-development
 
 ENV PHP_VERSION=8.4 \
     PHP_EXTENSIONS="ctype,curl,dom,fileinfo,intl,mbstring,opcache,pcntl,pdo_sqlite,phar,posix,session,shmop,simplexml,sockets,sodium,sysvmsg,sysvsem,sysvshm,tokenizer,xml,openssl,xmlreader,xmlwriter,zip,redis,igbinary,xhprof" \

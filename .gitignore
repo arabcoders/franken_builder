@@ -6,3 +6,5 @@
 /frontend/exported/
 .phpactor.json
 **.php-cs-fixer.cache
+/var/*
+!/var/.gitkeep
