@@ -26,7 +26,7 @@ ENV PHP_VERSION=8.4 \
     COMPOSER_CACHE_DIR=/root/.composer \
     SPC_DOWNLOAD_PATH=/tmp/spc-downloads
 
-RUN ./build-static.sh
+RUN sed -i 's/dump-extensions .*--format=text/& --no-ext-output/' ./build-static.sh && ./build-static.sh
 
 FROM alpine:3.20 AS frankenphp-builder
 
