@@ -1,7 +1,8 @@
 FROM php:8.3-cli-alpine AS base
 COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
 
-RUN apk add --no-cache \
+RUN --mount=type=cache,target=/var/cache/apk \
+    apk add --no-cache \
     bash curl git build-base cmake go jq \
     coreutils openssl-dev libzip-dev zlib-dev libpng-dev libjpeg-turbo-dev \
     libwebp-dev freetype-dev libxml2-dev icu-dev libxslt-dev \
@@ -19,7 +20,9 @@ ENV PHP_VERSION=8.4 \
     PHP_EXTENSION_LIBS="bzip2,freetype,libjpeg,libpng,libsodium,libzip,libxml2,zlib,icu,libxslt,libwebp" \
     SPC_LIBC=musl \
     CLASSIC=1 \
-    MIMALLOC=1
+    MIMALLOC=1 \
+    COMPOSER_CACHE_DIR=/root/.composer \
+    SPC_DOWNLOAD_PATH=/tmp/spc-downloads
 
 RUN ./build-static.sh
 

@@ -18,6 +18,15 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
+      - name: Cache Composer and SPC
+        uses: actions/cache@v3
+        with:
+          path: |
+            ~/.composer
+            ~/.cache/static-php-cli
+            /tmp/spc-downloads
+          key: frankenphp-composer-${{ matrix.arch }}-${{ hashFiles('build-static.sh') }}
+
       - name: Set up QEMU (multi-arch)
         uses: docker/setup-qemu-action@v3
 
