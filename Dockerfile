@@ -1,8 +1,4 @@
-# syntax=docker/dockerfile:1
-#checkov:skip=CKV_DOCKER_2
-#checkov:skip=CKV_DOCKER_3
-#checkov:skip=CKV_DOCKER_7
-FROM golang-base
+FROM golang:1.24-alpine as builder
 
 ARG TARGETARCH
 
@@ -84,15 +80,16 @@ ENV COMPOSER_ALLOW_SUPERUSER=1
 COPY --from=composer/composer:2-bin /composer /usr/bin/composer
 
 WORKDIR /go/src/app
-COPY go.mod go.sum ./
+
+RUN git clone --recursive https://github.com/dunglas/frankenphp . && \
+    if [ -n "${FRANKENPHP_VERSION}" ]; then git checkout "${FRANKENPHP_VERSION}"; fi \
+
 RUN go mod download
 
 WORKDIR /go/src/app/caddy
-COPY caddy/go.mod caddy/go.sum ./
 RUN go mod download
 
 WORKDIR /go/src/app
-COPY --link . ./
 
 ENV SPC_DEFAULT_C_FLAGS='-fPIE -fPIC -O3'
 ENV SPC_LIBC='musl'
@@ -105,3 +102,18 @@ ENV PHP_EXTENSION_LIBS=${PHP_EXTENSION_LIBS}
 
 RUN --mount=type=secret,id=github-token GITHUB_TOKEN=$(cat /run/secrets/github-token) ./build-static.sh && \
 	rm -Rf dist/static-php-cli/source/*
+
+FROM alpine:3.20 AS frankenphp
+
+LABEL org.opencontainers.image.title=FrankenPHP
+LABEL org.opencontainers.image.description="The modern PHP app server"
+LABEL org.opencontainers.image.url=https://frankenphp.dev
+LABEL org.opencontainers.image.source=https://github.com/dunglas/frankenphp
+
+# Copy the statically‑built FrankenPHP binary from builder
+COPY --from=builder /go/src/app/dist/frankenphp-linux-* /usr/local/bin/frankenphp
+
+# Make it executable (just in case)
+RUN chmod +x /usr/local/bin/frankenphp
+
+ENTRYPOINT ["/usr/local/bin/frankenphp"]
