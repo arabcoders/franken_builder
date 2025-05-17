@@ -47,7 +47,7 @@ jobs:
           cache-from: type=gha,scope=${{ github.workflow }}
           cache-to: type=gha,scope=${{ github.workflow }}
           tags: |
-            ghcr.io/${{ github.repository_owner }}/frankenphp-builder:latest-${{ matrix.arch }}
+            ghcr.io/${{ github.repository_owner }}/franken_builder:latest-${{ matrix.arch }}
 
   manifest:
     name: Create & Push multi‑arch manifest
@@ -71,6 +71,6 @@ jobs:
       - name: Create and push manifest list
         run: |
           docker buildx imagetools create \
-            --tag ghcr.io/${{ github.repository_owner }}/frankenphp-builder:latest \
-            ghcr.io/${{ github.repository_owner }}/frankenphp-builder:latest-amd64 \
-            ghcr.io/${{ github.repository_owner }}/frankenphp-builder:latest-arm64
+            --tag ghcr.io/${{ github.repository_owner }}/franken_builder:latest \
+            ghcr.io/${{ github.repository_owner }}/franken_builder:latest-amd64 \
+            ghcr.io/${{ github.repository_owner }}/franken_builder:latest-arm64
