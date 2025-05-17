@@ -16,8 +16,8 @@ ARG EMBED=''
 ARG DEBUG_SYMBOLS=''
 ARG MIMALLOC=''
 ARG NO_COMPRESS=''
-ARG PHP_EXTENSIONS="ctype,curl,dom,fileinfo,intl,mbstring,opcache,pcntl,pdo_sqlite,phar,posix,session,shmop,simplexml,sockets,sodium,sysvmsg,sysvsem,sysvshm,tokenizer,xml,openssl,xmlreader,xmlwriter,zip,redis,igbinary,xhprof"
-ARG PHP_EXTENSION_LIBS="bzip2,freetype,libjpeg,libpng,libsodium,libzip,libxml2,zlib,icu,libxslt,libwebp"
+ARG PHP_EXTENSIONS="xhprof"
+ARG PHP_EXTENSION_LIBS="icu"
 
 ENV GOTOOLCHAIN=local
 
@@ -100,8 +100,25 @@ ENV EXTENSION_DIR='/usr/lib/frankenphp/modules'
 ENV PHP_EXTENSIONS=${PHP_EXTENSIONS}
 ENV PHP_EXTENSION_LIBS=${PHP_EXTENSION_LIBS}
 
-RUN --mount=type=secret,id=github-token GITHUB_TOKEN=$(cat /run/secrets/github-token) ./build-static.sh && \
-	rm -Rf dist/static-php-cli/source/*
+RUN --mount=type=secret,id=github-token \
+    defaultExtensions=$(grep '^defaultExtensions=' build-static.sh \
+                       | sed -E 's/^defaultExtensions="([^"]*)".*/\1/') && \
+    defaultLibs=$(grep '^defaultExtensionLibs=' build-static.sh \
+                  | sed -E 's/^defaultExtensionLibs="([^"]*)".*/\1/') && \
+    mergedExts="${defaultExtensions},${PHP_EXTENSIONS}" && \
+    mergedLibs="${defaultLibs},${PHP_EXTENSION_LIBS}" && \
+    PHP_EXTENSIONS=$(echo "$mergedExts"           \
+                    | tr ',' '\n'                 \
+                    | awk '!seen[$0]++'           \
+                    | paste -sd ',' -) &&         \
+    PHP_EXTENSION_LIBS=$(echo "$mergedLibs"       \
+                        | tr ',' '\n'             \
+                        | awk '!seen[$0]++'       \
+                        | paste -sd ',' -) &&     \
+    export PHP_EXTENSIONS PHP_EXTENSION_LIBS &&   \
+    GITHUB_TOKEN=$(cat /run/secrets/github-token) \
+      ./build-static.sh && \
+    rm -rf dist/static-php-cli/source/*
 
 FROM alpine:3.20 AS frankenphp
 
