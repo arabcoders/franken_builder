@@ -44,8 +44,8 @@ jobs:
           file: Dockerfile
           platforms: linux/${{ matrix.arch }}
           push: true
-          cache-from: type=gha,scope=${{ github.workflow }}
-          cache-to: type=gha,scope=${{ github.workflow }}
+          cache-from: type=gha,scope=frankenphp-${{ matrix.arch }}-${{ github.workflow }}
+          cache-to: type=gha,scope=frankenphp-${{ matrix.arch }}-${{ github.workflow }}
           tags: |
             ghcr.io/${{ github.repository_owner }}/franken_builder:latest-${{ matrix.arch }}
 
