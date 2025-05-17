@@ -1,22 +1,24 @@
 name: Build FrankenPHP Docker Image
 
-on:
-  workflow_dispatch:
+on: workflow_dispatch
 
 jobs:
   build:
-    name: Build & Push FrankenPHP Builder Image
-    runs-on: ubuntu-latest
+    name: Build & Push (${{ matrix.arch }})
+    runs-on: ${{ matrix.runner }}
     permissions:
       packages: write
       contents: write
     strategy:
       matrix:
-        arch: [ amd64, arm64 ]
+        include:
+          - arch: amd64
+            runner: ubuntu-latest
+          - arch: arm64
+            runner: ubuntu-22.04-arm64
 
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
       - name: Cache Composer and SPC
         uses: actions/cache@v3
@@ -27,27 +29,48 @@ jobs:
             /tmp/spc-downloads
           key: frankenphp-composer-${{ matrix.arch }}-${{ hashFiles('build-static.sh') }}
 
-      - name: Set up QEMU (multi-arch)
-        uses: docker/setup-qemu-action@v3
+      - uses: docker/setup-buildx-action@v3
 
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
+      - uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.repository_owner }}
+          password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Login to GHCR
+      - name: Build & push FrankenPHP builder image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: Dockerfile
+          platforms: linux/${{ matrix.arch }}
+          push: true
+          cache-from: type=gha,scope=${{ github.workflow }}
+          cache-to: type=gha,scope=${{ github.workflow }}
+          tags: |
+            ghcr.io/${{ github.repository_owner }}/frankenphp-builder:latest-${{ matrix.arch }}
+
+  manifest:
+    name: Create & Push multi‑arch manifest
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      packages: write
+      contents: write
+
+    steps:
+      - name: Log in to GHCR
         uses: docker/login-action@v3
         with:
           registry: ghcr.io
           username: ${{ github.repository_owner }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Build and push frankenphp-builder image
-        uses: docker/build-push-action@v5
-        with:
-          context: .
-          file: Dockerfile
-          platforms: linux/amd64,linux/arm64
-          push: true
-          cache-from: type=gha, scope=${{ github.workflow }}
-          cache-to: type=gha, scope=${{ github.workflow }}
-          tags: |
-            ghcr.io/${{ github.repository_owner }}/franken_builder:latest
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Create and push manifest list
+        run: |
+          docker buildx imagetools create \
+            --tag ghcr.io/${{ github.repository_owner }}/frankenphp-builder:latest \
+            ghcr.io/${{ github.repository_owner }}/frankenphp-builder:latest-amd64 \
+            ghcr.io/${{ github.repository_owner }}/frankenphp-builder:latest-arm64
