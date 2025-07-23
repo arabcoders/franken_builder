@@ -16,7 +16,7 @@ ARG EMBED=''
 ARG DEBUG_SYMBOLS=''
 ARG MIMALLOC=''
 ARG NO_COMPRESS=''
-ARG PHP_EXTENSIONS="xhprof"
+ARG PHP_EXTENSIONS="xhprof iconv"
 ARG PHP_EXTENSION_LIBS="icu"
 
 ENV GOTOOLCHAIN=local
@@ -69,6 +69,7 @@ RUN apk update; \
 		php84-tokenizer \
 		php84-xml \
 		php84-xmlwriter \
+		php84-iconv \
 		upx \
 		wget \
 		xz ; \
