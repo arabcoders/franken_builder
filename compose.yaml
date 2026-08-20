@@ -1,4 +1,0 @@
-services:
-  frankenphp-builder:
-    build:
-      context: .
